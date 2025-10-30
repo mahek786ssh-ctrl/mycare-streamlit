@@ -1,0 +1,7 @@
+streamlit
+speechrecognition
+pyttsx3
+opencv-python
+requests
+pillow
+pygame
