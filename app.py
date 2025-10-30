@@ -1,36 +1,45 @@
 import streamlit as st
 import os
 import numpy as np
-import wavio
-import speech_recognition as sr
-import pyttsx3
-import pygame
-from PIL import Image
-import matplotlib.pyplot as plt
-import streamlit as st
-import time
-
-# Optional import for local audio (skip on Streamlit Cloud)
-try:
-    import sounddevice as sd
-    AUDIO_ENABLED = True
-except Exception:
-    AUDIO_ENABLED = False
-
-import numpy as np
-import wavio
-import speech_recognition as sr
-import pyttsx3
 from PIL import Image
 import matplotlib.pyplot as plt
 import time
 import random
-import pygame
 
-# Initialize components
-pygame.mixer.init()
+# ==========================================
+# ⚙️ Safe optional imports (audio features)
+# ==========================================
+try:
+    import pygame
+    pygame.mixer.init()
+    pygame_available = True
+except Exception:
+    pygame_available = False
+    st.warning("🔇 Audio playback not supported on Streamlit Cloud.")
 
-# Function to safely speak (avoids RuntimeError)
+try:
+    import sounddevice as sd
+    import wavio
+    import speech_recognition as sr
+    import pyttsx3
+    AUDIO_ENABLED = True
+except Exception:
+    AUDIO_ENABLED = False
+    st.warning("🎤 Voice recording disabled. Run locally to use this feature.")
+
+# ==========================================
+# 🔊 Play background sound (local only)
+# ==========================================
+if pygame_available:
+    try:
+        pygame.mixer.music.load("assets/audio/calming_nature.mp3")
+        pygame.mixer.music.play()
+    except Exception:
+        st.info("Audio playback disabled on this platform.")
+
+# ==========================================
+# 🗣️ Safe Text-to-Speech
+# ==========================================
 def speak(text):
     try:
         engine = pyttsx3.init()
@@ -38,14 +47,15 @@ def speak(text):
         engine.say(text)
         engine.runAndWait()
         engine.stop()
-    except RuntimeError:
-        pass  # Skip speaking if loop is busy
+    except Exception:
+        pass
 
+# ==========================================
+# 🏠 Streamlit UI Setup
+# ==========================================
 st.set_page_config(page_title="MyCare+", page_icon="💊", layout="wide")
 
-# ==========================================
 # 🌟 Splash Screen
-# ==========================================
 if "splash_done" not in st.session_state:
     st.title("💊 MyCare+ — AI Health Companion")
     st.subheader("Team CodeSlayers | HackNova 2025")
@@ -94,15 +104,7 @@ if section == "🎤 Voice & Emotion Assistant":
     st.header("🧠 Emotional Wellness & Support")
     st.write("Talk to MyCare+ about your day. It listens, detects emotion, and responds supportively.")
 
-    try:
-        import sounddevice as sd
-        import wavio
-        import speech_recognition as sr
-        import pyttsx3
-    except:
-        st.warning("🎤 Voice recording is disabled on Streamlit Cloud. Please run locally to use this feature.")
-
-    if st.button("🎙️ Speak Now"):
+    if AUDIO_ENABLED and st.button("🎙️ Speak Now"):
         fs = 44100
         duration = 5
         st.info("Listening... please speak for 5 seconds.")
@@ -110,8 +112,6 @@ if section == "🎤 Voice & Emotion Assistant":
         sd.wait()
         wavio.write("temp_audio.wav", recording, fs, sampwidth=2)
         st.success("Audio captured successfully!")
-        ...
-
 
         recognizer = sr.Recognizer()
         with sr.AudioFile("temp_audio.wav") as source:
@@ -134,24 +134,18 @@ if section == "🎤 Voice & Emotion Assistant":
                     st.success("Your mood seems balanced! Keep up your positive energy 💫")
                     speak("You seem fine today. Keep that positive energy flowing!")
 
-                # AI Mood Summary trigger after 3 emotions logged
                 if len(st.session_state.mood_log) >= 3:
                     mood_counts = {m: st.session_state.mood_log.count(m) for m in set(st.session_state.mood_log)}
                     dominant = max(mood_counts, key=mood_counts.get)
                     st.markdown("---")
                     st.subheader("🧠 AI Mood Summary")
                     st.info(f"You've been mostly feeling **{dominant.upper()}** today.")
-                    if dominant == "sadness":
-                        st.write("💚 Suggestion: Try a short walk or listen to calming sounds.")
-                    elif dominant == "happiness":
-                        st.write("🌞 Keep it up! You’re doing great emotionally.")
-                    else:
-                        st.write("✨ Your emotions are steady. Stay mindful and positive!")
-
             except sr.UnknownValueError:
                 st.error("Could not understand your voice.")
             except sr.RequestError:
                 st.error("Speech recognition service unavailable.")
+    elif not AUDIO_ENABLED:
+        st.warning("🎤 Voice input unavailable in cloud mode.")
 
 # ==========================================
 # 2️⃣ Tablet Scanner
