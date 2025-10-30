@@ -1,5 +1,22 @@
 import streamlit as st
-import sounddevice as sd
+import os
+import numpy as np
+import wavio
+import speech_recognition as sr
+import pyttsx3
+import pygame
+from PIL import Image
+import matplotlib.pyplot as plt
+import streamlit as st
+import time
+
+# Optional import for local audio (skip on Streamlit Cloud)
+try:
+    import sounddevice as sd
+    AUDIO_ENABLED = True
+except Exception:
+    AUDIO_ENABLED = False
+
 import numpy as np
 import wavio
 import speech_recognition as sr
@@ -77,6 +94,14 @@ if section == "🎤 Voice & Emotion Assistant":
     st.header("🧠 Emotional Wellness & Support")
     st.write("Talk to MyCare+ about your day. It listens, detects emotion, and responds supportively.")
 
+    try:
+        import sounddevice as sd
+        import wavio
+        import speech_recognition as sr
+        import pyttsx3
+    except:
+        st.warning("🎤 Voice recording is disabled on Streamlit Cloud. Please run locally to use this feature.")
+
     if st.button("🎙️ Speak Now"):
         fs = 44100
         duration = 5
@@ -85,6 +110,8 @@ if section == "🎤 Voice & Emotion Assistant":
         sd.wait()
         wavio.write("temp_audio.wav", recording, fs, sampwidth=2)
         st.success("Audio captured successfully!")
+        ...
+
 
         recognizer = sr.Recognizer()
         with sr.AudioFile("temp_audio.wav") as source:
